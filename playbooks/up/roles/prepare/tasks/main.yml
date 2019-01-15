@@ -1,0 +1,55 @@
+  - name: apt https
+    apt: name=apt-transport-https state=present
+    tags: apt
+
+  - name: Obtaining public keys for Docker Repos
+    apt_key: url={{ item }} state=present
+    with_items:
+     https://download.docker.com/linux/ubuntu/gpg
+    tags: apt
+  - name: APT | Add repositories
+    apt_repository: repo={{ item }}
+    with_items:
+     - deb [arch=amd64] https://download.docker.com/linux/ubuntu xenial stable
+    tags: apt
+  
+  - name: Update apt cache
+    apt: update_cache=yes cache_valid_time=36000
+    tags: apt
+  
+  - name: Obtaining public keys for Kubernetes Repo
+    apt_key: url={{ item }} state=present
+    with_items:
+     https://packages.cloud.google.com/apt/doc/apt-key.gpg
+    tags: apt
+
+  - name: APT | Add repositories
+    apt_repository: repo={{ item }}
+    with_items:
+     - deb [arch=amd64] http://apt.kubernetes.io/ kubernetes-xenial main
+    tags: apt
+
+  - name: Update apt cache
+    apt: update_cache=yes cache_valid_time=36000
+    tags: apt
+
+  - name: Install packages docker engine + k8s
+    apt:
+      name: "{{ packages }}"
+    vars:
+      packages:
+       - git
+       - htop
+       - mc
+       - apt-transport-https
+       - ca-certificates
+       - curl
+       - software-properties-common
+       - docker-ce=18.06.0~ce~3-0~ubuntu
+#       - bridge-utils
+       - kubelet
+       - kubeadm
+       - kubectl
+
+  - name: Make sure a service Docker is running
+    systemd: state=started name=docker

@@ -1,0 +1,17 @@
+  - hosts: all
+    become: yes
+    tasks:
+     - name: Create the 'kube' user
+       user: name=kube append=yes state=present createhome=yes shell=/bin/bash
+
+     - name: Allow 'kube' to have passwordless sudo
+       lineinfile:
+         dest: /etc/sudoers
+         line: 'kube ALL=(ALL) NOPASSWD: ALL'
+         validate: 'visudo -cf %s'
+
+     - name: Set authorized key took from file for kube
+       authorized_key:
+        user: kube
+        state: present
+        key: "{{ lookup('file', '/home/gleb/.ssh/id_rsa.pub') }}"

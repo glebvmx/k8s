@@ -1,0 +1,79 @@
+- hosts: master
+  become: yes
+  tasks:
+    - name: initialize the cluster
+      shell:   kubeadm init --pod-network-cidr=10.244.0.0/16 --apiserver-advertise-address '10.10.10.100' >> cluster_initialized.txt
+      args:
+        chdir: $HOME
+        creates: cluster_initialized.txt
+
+    - name: create .kube directory
+      become: yes
+      become_user: kube
+      file:
+        path: $HOME/.kube
+        state: directory
+        mode: 0755
+
+    - name: copy admin.conf to users kube config
+      copy:
+        src: /etc/kubernetes/admin.conf
+        dest: /home/kube/.kube/config
+        remote_src: yes
+        owner: kube 
+        group: kube
+
+    - name: install Pod network
+      become: yes
+      become_user: kube
+      shell: sudo kubectl apply -f /root/kube-flannel.yml >> pod_network_setup.txt
+      args:
+        chdir: $HOME
+        creates: pod_network_setup.txt
+
+    - name: install Dashboard
+      become: yes
+      become_user: kube
+      shell: kubectl apply -f https://raw.githubusercontent.com/kubernetes/dashboard/v1.10.1/src/deploy/recommended/kubernetes-dashboard.yaml >> dashboard_setup.txt
+      args:
+        chdir: $HOME
+        creates: dashboard_setup.txt
+
+    - name: install Dashboard Service Account
+      become: yes
+      become_user: kube
+      shell: kubectl create serviceaccount dashboard -n default >> dashboard_setup1.txt
+      args:
+        chdir: $HOME
+        creates: dashboard_setup1.txt
+
+    - name: Add the cluster binding rules to your dashboard account
+      become: yes
+      become_user: kube
+      shell: kubectl create clusterrolebinding dashboard-admin -n default --clusterrole=cluster-admin --serviceaccount=default:dashboard >> dashboard_setup2.txt
+      args:
+        chdir: $HOME
+        creates: dashboard_setup2.txt
+
+    - name: Copy the secret token required for your dashboard login
+      become: yes
+      become_user: kube
+      shell: kubectl get secret $(kubectl get serviceaccount dashboard -o jsonpath="{.secrets[0].name}") -o jsonpath="{.data.token}" | base64 --decode >> token.txt
+      args:
+        chdir: $HOME
+        creates: token.txt
+    - name: Deploy nginx to cluster
+      become: yes
+      become_user: kube
+      shell: sudo kubectl create deployment nginx --image=nginx
+      args:
+        chdir: $HOME
+
+    - name: Create nginx service and expose port to worker nodes ip
+      become: yes
+      become_user: kube
+      shell: sudo kubectl create service nodeport nginx --tcp=80:80
+      args:
+        chdir: $HOME
+
+

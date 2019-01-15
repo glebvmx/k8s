@@ -1,0 +1,13 @@
+- name: Install Docker engine and Kubernetes
+  hosts:
+    - master
+    - worker1
+    - worker2
+    - worker3
+  gather_facts: True
+  max_fail_percentage: 0
+  serial: 100
+  roles:
+    - prepare
+  tags: 
+    - preconf
