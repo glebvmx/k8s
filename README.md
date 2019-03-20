@@ -1,4 +1,4 @@
-1. Deploy Kubernetes cluster  for local development  environment with  Ansible and Vgrant + Virtual Box 
+Deploy Kubernetes cluster  for local development  environment with  Ansible and Vgrant + Virtual Box 
 
 
   
